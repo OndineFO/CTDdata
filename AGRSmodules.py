@@ -138,7 +138,7 @@ def GetData(PathHav, station):
 # ----------------------------------------------------------------------- #
 # Eftirhugt
 #   16 nov 2016, 16 jun 2016  
-def TurData(TripNo, Save = False):
+def TurData(TripNo):
 
     """ 
     TurData
@@ -158,11 +158,6 @@ def TurData(TripNo, Save = False):
     HydrPath = Path + 'hydr{}.dat'.format(TripNo)
     StodPath = Path + 'stodfil{}.csv'.format(TripNo)
     PathHav = Path + 'hav{}/'.format(TripNo) # data folder
-    # check if fig folder exists. make it
-    if Save:
-        PathFig = Path + 'fig{0}'.format(TripNo)
-        if not os.path.exists(PathFig):
-            os.makedirs(PathFig)
 
    # GETTING HYDR AND DATA
     # get trip info
@@ -235,7 +230,7 @@ def StodData(TimeDef):
 # ----------------------------------------------------------------------- #
 # Eftirhugt
 #   17. nov 2016 - plot FO og zoom á relevant øki    
-def PlotMap(Hydr, MapName, MapLabels = True, Save = False, SaveFolder = False, Form = 'jpg'):
+def PlotMap(Hydr, MapLabels = True, Savefig = False, Figpath = False, Form = 'jpg'):
     """ 
     PlotMap 
     PlotMap plots station locations on a map. 
@@ -277,7 +272,7 @@ def PlotMap(Hydr, MapName, MapLabels = True, Save = False, SaveFolder = False, F
             plt.text(xpt - xoffset, ypt + yoffset, name, fontsize = 9)
     
     #plt.title('{}'.format(MapName), fontsize=14)        
-    plt.title('CTD støðir tann {}'.format(Hydr.Date.iloc[0]), fontsize = 20)   
+    plt.title('CTD stations - {}'.format(Hydr.Date.iloc[0]), fontsize = 20)   
     
     # Draw meridional and zonal lines
      # define gap between thick and thin lines depending on map wiev   
@@ -295,13 +290,13 @@ def PlotMap(Hydr, MapName, MapLabels = True, Save = False, SaveFolder = False, F
         m.drawparallels(parallels, labels = [1,0,0,0], linewidth = 0.2, color = 'k')
         m.drawmeridians(meridians, labels = [0,0,0,1], linewidth = 0.2, color = 'k')
     
-    if Save:
-        Path = '../DATA/CTD/cru{0}/fig{0}/Kort.{1}'.format(MapName,Form)
-        plt.savefig(Path, format=Form, dpi=400, bbox_inches='tight')
+    if Savefig:
+        path = Figpath + '/map.{}'.format(Form)
+        plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 # ----------------------------------------------------------------------- #    
 # Eftirhugt
 #   17. nov 2016 
-def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Save = False, Form = 'jpg', Scale= False):
+def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath = False, Form = 'jpg', Scale= False):
 
     """    
     PlotProfiles
@@ -363,19 +358,14 @@ def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Save = False, Form = 'jpg
         #wspace = 0.2   # the amount of width reserved for blank space between subplots
         #hspace = 0.5   # the amount of height reserved for white space between subplots
         
-        if Save:
-            Path = '../DATA/CTD/cru{0}/fig{0}/{1}.{2}'.format(TripNo,Name,Form)
-            plt.savefig(Path, format=Form, dpi=400, bbox_inches='tight')
+        if Savefig:
+            path = Figpath + '/{0}.{1}'.format(Name,Form)
+            plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 
 # ----------------------------------------------------------------------- #
-def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Save = False, Form = 'jpg'):
+def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Savefig = False, Figpath = False, Form = 'jpg'):
     # Set path where to find section definition    
-    Path = '../DATA/CTD/cru{}/'.format(TripNo)
-    SecPath = Path + 'sect{}.csv'.format(TripNo)
-    PathFig = Path + '/fig{0}'.format(TripNo)
-    
-    if Save: 
-        if not os.path.exists(PathFig): os.makedirs(PathFig)
+    SecPath = '../DATA/CTD/cru{0}/sect{0}.csv'.format(TripNo)
         
    # GET SECTIONS INFORMATION
     # read section definition, all or predefined cols
@@ -413,7 +403,7 @@ def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Save = False,
         SecName = column[0] 
         SecDir = str.lower(column[1])
         SecSt = column[2:].dropna(axis=0) # actual station numbers in section
-        SecSt = SecSt.convert_objects(convert_numeric=True).tolist() # list of staton numbers as integers
+        SecSt = pd.to_numeric(SecSt).tolist()  # list of staton numbers as integers
         StNames = Hydr.StName[Hydr.index.isin(SecSt)].reindex(SecSt).tolist()
         
        # PREPARING DATA FOR PLOTTING 
@@ -435,8 +425,6 @@ def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Save = False,
         else:                x = Hydr.Lat[Hydr.index.isin(SecSt)].reindex(SecSt).tolist()
         y = range(len(Temp)) 
         X,Y = np.meshgrid(x, y)   
-        
-       
         
         # lengths and name
         if max(y) < 60: ylen = 60
@@ -475,13 +463,14 @@ def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Save = False,
             
             plt.margins(0.02)
                 
-            if Save:
-                PathFig2 = PathFig + '/Sect{}_{}.{}'.format(SecName, Vars[a], Form)
-                plt.savefig(PathFig2, dpi=400, format = Form, bbox_inches='tight')
+            if Savefig:
+                path = Figpath + '/Sect{}_{}.{}'.format(SecName, Vars[a], Form)
+                plt.savefig(path, dpi=400, format = Form, bbox_inches='tight')
 
 
 # ----------------------------------------------------------------------- #
-def PlotTimeSeries(Hydr, Data, StName, Save = False, Form = 'jpg', FigDim = (16,6), DensLine = True, DensDelta = False):
+def PlotTimeSeries(Hydr, Data, StName, Savefig = False, Figpath = False, Form = 'jpg', 
+                   DensLine = True, DensDelta = False, FigDim = (16,6)):
     
    # PREPARING PLOT 
     # creating X,Y data mesh for plotting 
@@ -530,13 +519,14 @@ def PlotTimeSeries(Hydr, Data, StName, Save = False, Form = 'jpg', FigDim = (16,
         plt.xticks(X[0],np.array(Hydr.Date), rotation = 'vertical')
         plt.margins(0.02)    
         
-        if Save:
-            PathFig = '../DATA/CTD/Timeseries/'
-            SavePath = PathFig + '{}_{}.{}'.format(StName, Vars[a], Form)
-            plt.savefig(SavePath, format = Form, dpi=400, bbox_inches='tight')
+        if Savefig:
+            if Figpath: Figpath = Figpath
+            else: Figpath = '../DATA/CTD/Timeseries/'
+            path = Figpath + '{}_{}.{}'.format(StName, Vars[a], Form)
+            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')
 
 
-def TSdiagram(TripNo, Save, Form):
+def TSdiagram(TripNo, Savefig, Figpath, Form):
     # Get trip data 
     Hydr, Data = TurData(TripNo, Save = False)
     
@@ -588,12 +578,9 @@ def TSdiagram(TripNo, Save, Form):
     cbar = plt.colorbar(C2)
     cbar.ax.set_ylabel('oxygen')
     
-    if Save:
-        Path = '../DATA/CTD/cru{}/'.format(TripNo)
-        PathFig = Path + '/fig{}/'.format(TripNo)
-        
-        PathFig2 = PathFig + 'TSdiagram.{}'.format(Form)
-        plt.savefig(PathFig2, format = Form, dpi=400, bbox_inches='tight')
+    if Savefig:
+        path = Figpath + 'TSdiagram.{}'.format(Form)
+        plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')
     
     
 def TSdiagrams(TripNo):
@@ -646,10 +633,6 @@ def TSdiagrams(TripNo):
         cbar = plt.colorbar(C2)
         cbar.ax.set_ylabel('oxygen')
         
-        if Save:
-            Path = '../DATA/CTD/cru{}/'.format(TripNo)
-            PathFig = Path + '/fig{}/'.format(TripNo)
-            
-            PathFig2 = PathFig + 'TSdiagram{}.{}'.format(Hydr.StName[StNum], Form)
-            plt.savefig(PathFig2, format = Form, dpi=400, bbox_inches='tight')
-    
+        if Savefig:
+            path = Figpath + 'TSdiagram{}.{}'.format(Hydr.StName[StNum], Form)
+            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')   
