@@ -291,7 +291,7 @@ def PlotMap(Hydr, MapLabels = True, Savefig = False, Figpath = False, Form = 'jp
         m.drawmeridians(meridians, labels = [0,0,0,1], linewidth = 0.2, color = 'k')
     
     if Savefig:
-        path = Figpath + '/map.{}'.format(Form)
+        path = Figpath + 'map.{}'.format(Form)
         plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 # ----------------------------------------------------------------------- #    
 # Eftirhugt
@@ -359,7 +359,7 @@ def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath 
         #hspace = 0.5   # the amount of height reserved for white space between subplots
         
         if Savefig:
-            path = Figpath + '/{0}.{1}'.format(Name,Form)
+            path = Figpath + '{0}.{1}'.format(Name,Form)
             plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 
 # ----------------------------------------------------------------------- #
@@ -464,7 +464,7 @@ def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Savefig = Fal
             plt.margins(0.02)
                 
             if Savefig:
-                path = Figpath + '/Sect{}_{}.{}'.format(SecName, Vars[a], Form)
+                path = Figpath + 'Sect{}_{}.{}'.format(SecName, Vars[a], Form)
                 plt.savefig(path, dpi=400, format = Form, bbox_inches='tight')
 
 
@@ -635,4 +635,4 @@ def TSdiagrams(TripNo):
         
         if Savefig:
             path = Figpath + 'TSdiagram{}.{}'.format(Hydr.StName[StNum], Form)
-            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')   
+            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')
