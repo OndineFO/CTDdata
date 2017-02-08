@@ -17,21 +17,21 @@ def varmax(var, a = 10):
     varmax = np.ceil(var.max() * a) / a
     return varmax
 
-def setup_text_plots(fontsize=8, usetex=True):
+def setup_text_plots(usetex=True, fontsize = 16): #(fontsize=8, usetex=True)
     """
     This function adjusts matplotlib settings so that all figures in the
     textbook have a uniform format and look.
     """
-    mpl.rc('legend', fontsize=fontsize, handlelength=3)
+    mpl.rc('figure', titlesize=18)
     mpl.rc('axes', titlesize=fontsize)
     mpl.rc('axes', labelsize=fontsize)
     mpl.rc('xtick', labelsize=fontsize)
     mpl.rc('ytick', labelsize=fontsize)
+    mpl.rc('legend', fontsize=fontsize, handlelength=3)
     mpl.rc('text', usetex=usetex)
     mpl.rc('font', size=fontsize, family='serif',
                   style='normal', variant='normal',
                   stretch='normal', weight='normal')
-
 
 # ----------------------------------------------------------------------- #
 # Eftirhugt
@@ -269,10 +269,11 @@ def PlotMap(Hydr, MapLabels = True, Savefig = False, Figpath = False, Form = 'jp
         if MapLabels == True:
             xp, yp = m(Hydr.Lon.mean(), Hydr.Lat.mean())
             xoffset, yoffset = 0.05*xp, 0.05*xp
-            plt.text(xpt - xoffset, ypt + yoffset, name, fontsize = 9)
+            ax.text(xpt - xoffset, ypt + yoffset, name, fontsize = 12)
+            #plt.text(xpt - xoffset, ypt + yoffset, name, fontsize = 9)
     
     #plt.title('{}'.format(MapName), fontsize=14)        
-    plt.title('CTD stations - {}'.format(Hydr.Date.iloc[0]), fontsize = 20)   
+    ax.set_title('CTD stations - {}'.format(Hydr.Date.iloc[0]), fontsize = 20)   
     
     # Draw meridional and zonal lines
      # define gap between thick and thin lines depending on map wiev   
@@ -292,7 +293,7 @@ def PlotMap(Hydr, MapLabels = True, Savefig = False, Figpath = False, Form = 'jp
     
     if Savefig:
         path = Figpath + 'map.{}'.format(Form)
-        plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
+        fig.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 # ----------------------------------------------------------------------- #    
 # Eftirhugt
 #   17. nov 2016 
@@ -306,7 +307,6 @@ def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath 
     Output: None    
     """
 
-    
     # possibility to choose spesific stations or all
     if Profiles:    Hydro = Hydr.iloc[Profiles,:]
     else:           Hydro = Hydr 
@@ -334,19 +334,18 @@ def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath 
         Dep = Data.loc[StNum] ['depth']
         
         # initiate figure
-        f, axarr = plt.subplots(1, len(Vars), sharey=True, figsize = (8,8))
-        plt.suptitle('Station name: {}. Station number: {}'.format(Name, StNum), fontsize=18)
-        plt.subplots_adjust(left=0.08, right=0.98, bottom=0.08, top=None, wspace=None, hspace=None)
+        fig, axarr = plt.subplots(1, len(Vars), sharey=True, figsize = (8,8))
+        fig.suptitle('Station name: {}. Station number: {}'.format(Name, StNum))
+        fig.subplots_adjust(left=0.08, right=0.98, bottom=0.08, top=None, wspace=None, hspace=None)
         
         # iterate through variables and plot subplots
         for V, Var in enumerate(['temp', 'sal', 'dens', 'flu', 'ox']):
             # plot
             axarr[V].plot(Dat[Var],-Dep,'b')
-
             #set axes, titles etc.
-            axarr[V].set_title(Var, fontsize = 16)      # Title - parameter name
-            axarr[V].set_xlabel(SI[V], fontsize = 16)   # Xlabel - SI
-            if V == 0: axarr[V].set_ylabel(r'Depth $m$', fontsize = 16) # Ylabel on first subplot
+            axarr[V].set_title(Var)      # Title - parameter name
+            axarr[V].set_xlabel(SI[V])   # Xlabel - SI
+            if V == 0: axarr[V].set_ylabel(r'Depth $m$') # Ylabel on first subplot
             axarr[V].locator_params(axis='x',nbins=4)   # Xticks
             axarr[V].set_xlim(xmin = datamin[Var].min(), xmax = datamax[Var].max()) #Xlim
             if Dep.max() < 60: plt.ylim(ymin = -60)     # Ylim
@@ -360,9 +359,80 @@ def PlotProfiles(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath 
         
         if Savefig:
             path = Figpath + '{0}.{1}'.format(Name,Form)
-            plt.savefig(path, format=Form, dpi=400, bbox_inches='tight')
+            fig.savefig(path, format=Form, dpi=400, bbox_inches='tight')
 
 # ----------------------------------------------------------------------- #
+
+def PlotProfiles_multiaxis(TripNo, Hydr, Data, Profiles = False, Savefig = False, Figpath = False, Form = 'jpg', Scale= False):
+
+    """    
+    PlotProfiles_multiaxis
+    creates a figure for each station, whith one plot for each parameter
+    
+    Input:  Hydr, Data, Profiles
+    Output: None    
+    """
+
+    # possibility to choose spesific stations or all
+    if Profiles:    Hydro = Hydr.iloc[Profiles,:]
+    else:           Hydro = Hydr 
+    
+    # Setting variables, colors and labels for each of the two plots
+    # plotting temp sal and dens in first and temp, flu and ox in the second
+    vars0 = [['sal', 'dens', 'temp'], ['flu', 'ox', 'temp']]
+    color0 = (('darkorange', 'dimgray','darkblue'),('seagreen', 'tomato', 'darkblue'))
+    label0 = ((r'Salinity [$g/kg$]', r'Density ${\sigma}_{\theta} [kg/m^3$]', r'Temperature [$^\circ C$]'),
+              (r'Fluorescence [$mg/m^3$]', r'Oxygen [$mg/L$]', r'Temperature [$^\circ C$]'))
+    vmin = [[30,24,3],[0.1,4,3]]
+    vmax = [[36,28,12],[20,12,12]]
+    
+    # iterating through stations and plotting profiles  
+    for StNum in Hydro.index:
+    
+        # preparing data
+        Name = Hydro.loc[StNum].StName
+        Dat = Data.loc[StNum]
+        Dep = Data.loc[StNum] ['depth']
+        
+        # initiate figure
+        fig, axarr = plt.subplots(1,2, figsize = (12,8), sharey=True)
+        fig.suptitle('Station name: {}. Station number: {}'.format(Name, StNum), y = 1.03)
+        fig.subplots_adjust(bottom=0.2 , wspace=None, hspace=None)
+        
+        for a,ax in enumerate(axarr):
+            # Twin the y-axis twice to make independent x-axes.
+            axes = [ax, ax.twiny(), ax.twiny()]
+
+            # Make some space in the fig at the bottom for the extra x-axis. 
+            # Change the extra axis ticks and label from top to bottom 
+            # Move the spine down by 0.15
+            #fig.subplots_adjust(bottom=0.2)
+            axes[1].xaxis.set_ticks_position("bottom")
+            axes[1].xaxis.set_label_position("bottom")
+            axes[1].spines['bottom'].set_position(('axes', -0.13))
+
+            data0 = Dat[vars0[a]]
+            for b, ax in enumerate(axes):
+                data1 = data0[vars0[a][b]]
+                if a == 1 and b == 0:
+                    ax.semilogx(data1, -Dat.depth, color = color0[a][b], label = label0[a][b], linewidth=2)
+                else:ax.plot(data1, -Dat.depth, color = color0[a][b], label = label0[a][b], linewidth=2)
+                ax.set_xlabel(label0[a][b], color = color0[a][b])
+                #ax.tick_params(axis = 'x', colors = color0[a][b])
+                #ax.locator_params(axis='x',nbins=5)
+                ax.set_xlim(xmin = vmin[a][b],
+                            xmax = vmax[a][b])
+                if a == 0: ax.set_ylabel(r'Depth $m$') # Ylabel - depth
+                if Dat.depth.max() < 60: plt.ylim(ymin = -60) # Ylim - for comparison
+            
+        if Savefig:
+            path = Figpath + 'Multi_{0}.{1}'.format(Name,Form)
+            fig.savefig(path, format=Form, dpi=400, bbox_inches='tight')
+
+
+# ----------------------------------------------------------------------- #
+
+
 def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Savefig = False, Figpath = False, Form = 'jpg'):
     # Set path where to find section definition    
     SecPath = '../DATA/CTD/cru{0}/sect{0}.csv'.format(TripNo)
@@ -440,35 +510,34 @@ def MakeSection(TripNo, Hydr, Data, Columns = False, Vars = False, Savefig = Fal
 
        # ITERATE THROUGH VARIABLES AND PLOT 
         for a, var in enumerate([Temp, Sal, Flu, Ox]):
-            fig = plt.figure(figsize = (xlen,10))
+            fig, ax = plt.subplots(figsize = (xlen,10))
 
             V1 = np.arange(ColorMin[a],ColorMax[a],ColorStep[a])
             V2 = np.arange(ColorMin[4],ColorMax[4],ColorStep[4])
 
-            C1 = plt.contourf(X, -Y, var, V1, cmap=plt.cm.rainbow)
-            C2 = plt.contour(X,-Y, Rho, V2, colors='k')
-            plt.clabel(C2, colors='k', fontsize=12, fmt='%2.1f')
+            C1 = ax.contourf(X, -Y, var, V1, cmap=plt.cm.rainbow)
+            C2 = ax.contour(X,-Y, Rho, V2, colors='k')
+            ax.clabel(C2, colors='k', fontsize=12, fmt='%2.1f')
 
             plt.vlines(x,-ylen,0)
             cbar = plt.colorbar(C1)
-            cbar.ax.set_ylabel(VarName[a],fontsize = 16)
+            cbar.ax.set_ylabel(VarName[a])
             cbar.ax.tick_params(labelsize=12)
 
-            plt.title(SecName, fontsize = 20)
-            plt.xlabel(xlab, fontsize = 16)
-            plt.ylabel('Dýpi', fontsize = 16)
+            ax.set_title(SecName)
             
             #plt.xticks(x,[Deg for Deg in x], rotation = 'vertical')
-            plt.xticks(x,[Name for Name in StNames], rotation = 'vertical')
+            ax.set_xticks(x)
+            ax.set_xticklabels([Name for Name in StNames], rotation = 'vertical')
             
-            plt.margins(0.02)
+            ax.margins(0.02)
                 
             if Savefig:
                 path = Figpath + 'Sect{}_{}.{}'.format(SecName, Vars[a], Form)
                 plt.savefig(path, dpi=400, format = Form, bbox_inches='tight')
 
-
 # ----------------------------------------------------------------------- #
+
 def PlotTimeSeries(Hydr, Data, StName, Savefig = False, Figpath = False, Form = 'jpg', 
                    DensLine = True, DensDelta = False, FigDim = (16,6)):
     
@@ -502,7 +571,7 @@ def PlotTimeSeries(Hydr, Data, StName, Savefig = False, Figpath = False, Form = 
         var = var = Data[var].unstack(0)     
         var.index = -var.index
 
-        fig = plt.figure(figsize = FigDim)
+        fig, ax = plt.subplots(figsize = FigDim)
 
         V1 = np.arange(ColorMin[a],ColorMax[a],ColorStep[a])
         C1 = plt.contourf(X, -Y, var, V1, cmap=plt.cm.rainbow)
@@ -514,10 +583,11 @@ def PlotTimeSeries(Hydr, Data, StName, Savefig = False, Figpath = False, Form = 
         plt.vlines(X[0],-Y.max(),0)
         cbar = plt.colorbar(C1)
 
-        plt.title('{0}, {1}'.format(StName, VarName[a]), fontsize = 16)
-        plt.ylabel('Dýpi', fontsize = 14)
-        plt.xticks(X[0],np.array(Hydr.Date), rotation = 'vertical')
-        plt.margins(0.02)    
+        ax.set_title('{0}, {1}'.format(StName, VarName[a]), fontsize = 16)
+        ax.set_ylabel('Dýpi', fontsize = 14)
+        ax.set_xticks(X[0])
+        ax.set_xticklabels(np.array(Hydr.Date), rotation = 'vertical')
+        ax.margins(0.02)    
         
         if Savefig:
             if Figpath: Figpath = Figpath
@@ -528,7 +598,7 @@ def PlotTimeSeries(Hydr, Data, StName, Savefig = False, Figpath = False, Form = 
 
 def TSdiagram(TripNo, Savefig, Figpath, Form):
     # Get trip data 
-    Hydr, Data = TurData(TripNo, Save = False)
+    Hydr, Data = TurData(TripNo)
     
     # Create variables with user-friendly names
     temp  = Data.temp
@@ -635,4 +705,4 @@ def TSdiagrams(TripNo):
         
         if Savefig:
             path = Figpath + 'TSdiagram{}.{}'.format(Hydr.StName[StNum], Form)
-            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')
+            plt.savefig(path, format = Form, dpi=400, bbox_inches='tight')   
